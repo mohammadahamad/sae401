@@ -1,0 +1,151 @@
+{% extends 'base.html.twig' %}
+
+{% block javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.comment-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const publicationId = formData.get('publicationId');
+            const content = formData.get('content');
+
+            fetch('/api/commentaire', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: content, publicationId: publicationId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.error) {
+                    console.error(data.error);
+                } else {
+                window.location.reload();
+                }
+            })
+            .catch(error => console.error('Erreur:', error));
+        });
+    });
+    document.getElementById('commentForm').addEventListener('submit', function() {
+        // Trouvez le bouton de soumission dans le formulaire
+        var submitButton = this.querySelector('button[type="submit"]');
+        // Désactivez le bouton
+        submitButton.disabled = true;
+        // Changez le texte du bouton pour informer l'utilisateur
+        submitButton.textContent = 'Envoi en cours...';
+    });
+
+document.querySelectorAll('.heart').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const publicationId = this.getAttribute('data-publication-id');
+        const liked = this.getAttribute('data-liked') === 'true';
+
+        fetch(`/like/${publicationId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest' // Si vous utilisez des sessions Symfony
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(data.message);
+            // Mettre à jour la couleur de l'icône en fonction de l'état "Like"
+            const icon = this.querySelector('ion-icon');
+            if (liked) {
+                icon.style.color = '#ccc'; // Contour de l'icône
+            } else {
+                icon.style.color = 'var(--primary-color)'; // Couleur principale (ici utilisée en supposant que la variable CSS --primary-color est définie)
+            }
+            // Inverser l'état "Like"
+            this.setAttribute('data-liked', (!liked).toString());
+        })
+        .catch(error => {
+            console.error('There was an error!', error);
+        });
+    });
+});
+});
+
+</script>
+{% endblock %}
+
+{% block body %}
+<img style="width: 100%" class="wave" src="{{ asset('img/wave.png') }}">
+<div class="publications">
+    {% for data in publicationsData %}
+        <div class="publication">
+            <div class="publication__header">
+                <div class="publication__author">
+                    <a href="{{ path('app_profil', {username: data.publication.userID.username}) }}">
+                    <img src="{{ asset('uploads/' ~ data.publication.userID.profilePicture) }}" alt="Profil de {{ data.publication.userID.username | escape }}" style="width: 40px;"></a>
+                    <p> {{ data.publication.userID.username | escape }}</p>
+                </div>
+                <p>{{ data.publication.dateTime|date('Y-m-d H:i') }}</p>
+            </div>
+            <div class="publication__content">
+            {% if data.fileType == 'image' %}
+                <img src="{{ asset('uploads/' ~ data.publication.postContent) }}" alt="Publication">
+            {% elseif data.fileType == 'video' %}
+                <video controls src="{{ asset('uploads/' ~ data.publication.postContent) }}"></video>
+            {% endif %}
+            </div>
+            <div class="publication__likes">
+            {% if data.isLikedByCurrentUser %}
+                <button onclick="location.href='{{ path('like_publication', {'id': data.publication.id}) }}'" class="heart active">
+                    <ion-icon name="leaf"></ion-icon>
+                </button>
+
+            {% else %}
+                <button onclick="location.href='{{ path('like_publication', {'id': data.publication.id}) }}'" class="heart">
+                    <ion-icon name="leaf-outline"></ion-icon>
+                </button>
+            {% endif %}
+            
+            <span>{{ data.likesCount }} likes</span>
+             {% if data.likers|length > 0 %}
+             <div class="liked">
+            <p>Liked by:</p>
+            <ul>
+            {% for liker in data.likers %}
+                    <li><img src="{{ asset('uploads/' ~ liker.ProfilePicture) }}" alt="profil" style="width: 25px;">
+                    {{ liker.Username }}</li>
+            {% endfor %}
+            </ul>
+            </div>
+            {% endif %}
+            </div>
+            <p>{{ data.publication.postType | escape }}</p>
+
+            <div class="publication__comments">
+                {% for commentaire in data.publication.commentaires %}
+                    <div class="comment">
+                        <img src="{{ asset('uploads/' ~ commentaire.userID.profilePicture) }}" alt="Profil de {{ commentaire.userID.username | escape }}" style="width: 25px;">
+                        <p><span>{{ commentaire.userID.username | escape }}</span>: {{ commentaire.content | escape }} </p>
+                        <p class="comment__date">{{ commentaire.dateTime|date('Y-m-d H:i') }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <form id="commentForm" class="comment-form" data-publication-id="{{ data.publication.id }}" action="" method="post">
+                <input type="text" name="content" placeholder="Ajoutez un commentaire..." required>
+                <input type="hidden" name="publicationId" value="{{ data.publication.id }}">
+                <button class="btn" type="submit">Commenter</button>
+            </form>
+        </div>
+    {% else %}
+        <p>Cet utilisateur n'a pas encore publié de contenu.</p>
+    {% endfor %}
+</div>
+   <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+{% endblock %}
+

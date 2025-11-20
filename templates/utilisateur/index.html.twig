@@ -1,0 +1,147 @@
+{% extends 'base.html.twig' %}
+
+{% block javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.comment-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const publicationId = formData.get('publicationId');
+            const content = formData.get('content');
+
+            fetch('/api/commentaire', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: content, publicationId: publicationId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.error) {
+                    console.error(data.error);
+                } else {
+                window.location.reload();
+                }
+            })
+            .catch(error => console.error('Erreur:', error));
+        });
+    });
+document.querySelectorAll('.like-btn').forEach(button => {
+    button.addEventListener('click', function(e) {
+        const publicationId = this.dataset.publicationId;
+        fetch(`/like/publication/${publicationId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ like: true }) // Assurez-vous que cela correspond à ce que votre backend attend
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const likesCountElement = this.previousElementSibling;
+                let likesCount = parseInt(likesCountElement.textContent);
+                if (this.textContent === 'Like') {
+                    likesCountElement.textContent = `${++likesCount} likes`;
+                    this.textContent = 'Liked';
+                } else {
+                    likesCountElement.textContent = `${--likesCount} likes`;
+                    this.textContent = 'Like';
+                }
+            } else {
+                alert('Une erreur est survenue.');
+            }
+        })
+        .catch(error => console.error('Erreur:', error));
+    });
+});
+
+
+});
+</script>
+{% endblock %}
+{% block body %}
+<img class="wave" src="{{ asset('img/wave.png') }}">
+<div class="profil">
+        <div class="imgprofil">
+        <a href="{{ path('app_modify_profile') }}">
+        <img class="profil-cov" src="{{ asset('/uploads/' ~ utilisateur.ProfilePicture) }}" alt="Photo de profile">
+        </a>
+        <img class="cover" src="{{ asset('/uploads/' ~ utilisateur.ProfileCover) }}" alt="Photo de cover">
+</div>
+<div class="info">
+    <div class="info_stat">   
+        <span class="material-symbols-outlined">psychiatry</span>
+        <p>Publications : {{ nombrePublications }}</p>
+    </div>
+
+    <div class="info_stat">   
+        <span class="material-symbols-outlined">psychiatry</span>
+        <p>Abonnés : {{ followersCount }}</p>
+    </div>
+
+    <div class="info_stat">   
+        <span class="material-symbols-outlined">psychiatry</span>
+        <p>Abonnements : {{ followingsCount }}</p>
+    </div>
+</div>
+<div class="bio">
+        <div class="bio-i">
+            <h2>Profil de l’utilisateur</h2>
+            <h1>{{ utilisateur.username }}</h1>
+            <p>{{ utilisateur.Bio }}</p>
+            <p>{{ utilisateur.email }}</p>
+            <a href="{{ path('app_modify_profile') }}">Modifier le profil</a>
+        </div>
+        <div class="abone">
+            <h2>Abonnés</h2>
+            <ul>
+                {% for follower in followers %}
+                    <li>{{ follower.FollowerID.username }}</li>
+                {% endfor %}
+            </ul>
+            </div>
+        <div class="abonnements">
+            <h2>Abonnements</h2>
+            <ul>
+                {% for following in followings %}
+                    <li>{{ following.UserID.username }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+</div>
+    <div class="eco-score">
+        {% if utilisateur.ecoScore is not null %}
+            <p>Votre éco-score est : {{ utilisateur.ecoScore }}</p>
+        {% else %}
+            <p>Vous n'avez pas encore passé le questionnaire éco-score.</p>
+            <a href="{{ path('eco_questionnaire') }}">Passer le questionnaire éco-score</a>
+        {% endif %}
+    </div>
+<h2>Publications</h2>
+<div class="publication-mosaic">
+    {% for publication in publications %}
+        <div class="publication">
+            <p>{{ publication.DateTime|date('Y-m-d H:i') }}</p>
+            {% if publication.fileType == 'image' %}
+
+                <img src="{{ asset('/uploads/' ~ publication.postContent) }}" alt="Image de publication">
+
+            {% elseif publication.fileType == 'video' %}
+                <video controls src="{{ asset('/uploads/' ~ publication.postContent) }}"></video>
+            {% endif %}
+             <a href="{{ path('publication_edit', {'id': publication.id}) }}" class="btn btn-primary">Modifier</a>
+             <a href="{{ path('publication_delete', {'id': publication.id}) }}" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette publication ?');">Supprimer</a>
+                        <div>
+            </div>
+        </div>
+    {% else %}
+        <p>Aucune publication à afficher.</p>
+    {% endfor %}
+    </div>
+</div>
+{% endblock %}
+

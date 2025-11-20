@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('Scss/app.scss') }}">
+{% endblock %}
+
+{% block body %}
+        <div class="card">
+        <h2>Eco-Questionnaire</h2>
+            <div class="card-body">
+                {{ form_start(form) }}
+                {{ form_widget(form) }}
+                <button class="btn btn-primary">Soumettre</button>
+                {{ form_end(form) }}
+            </div>
+        </div>
+{% endblock %}

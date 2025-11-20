@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}EcoConnect{% endblock %}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+        <link rel="stylesheet" href="{{ asset('build/app.css') }}">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+        {% block stylesheets %}
+            {{ encore_entry_link_tags('app') }}
+        {% endblock %}
+
+        {% block javascripts %}
+            {{ encore_entry_script_tags('app') }}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+    </head>
+    <body>
+        <header>
+       {% if app.user %}
+        {# Si l'utilisateur est connecté, affichez cette navbar #}
+        <nav class="logged-in-nav">
+            <div class="logo">
+                <a href="{{ path('app_utilisateur') }}">
+                    <img src="{{ asset('img/logoconnect.png') }}">
+                </a>
+            </div>
+            <ul class="nav-links">
+                <li class="nav-item"><a href="{{ path('app_publication') }}"><i class="material-icons">add_circle</i></a></li>
+                <li class="nav-item"><a href="{{ path('app_utilisateur') }}"><i class="material-icons">person</i></a></li>
+                <li class="nav-item"><a href="{{ path('app_home') }}"><i class="material-icons">home</i></a></li>
+                <li class="nav-item"><a href="{{ path('app_contact') }}"><i class="material-icons">message</i></a></li>
+                <li class="nav-item"><a href="{{ path('app_logout') }}"><i class="material-icons">exit_to_app</i></a></li>
+                {% if 'ROLE_ADMIN' in app.user.roles %}
+                    <li class="nav-item"><a href="{{ path('admin') }}"><span class="material-symbols-outlined">shield</span></a></li>
+                {% endif %}
+            </ul>
+                <div class="search-box">
+                    <form action="{{ path('app_search') }}" method="get">
+                        <button class="btn-search" type="submit"><i class="fas fa-search"></i></button>
+                        <input type="text" class="input-search" name="query" placeholder="Rechercher publications ou profils">
+                    </form>
+                </div>
+            </nav>
+{% else %}
+        {# Si l'utilisateur n'est pas connecté, affichez cette autre navbar #}
+         <nav class="logged-out-nav">
+            <div class="logo">
+                    <a href="{{ path('app_utilisateur') }}">
+                        <img src="{{ asset('img/logoconnect.png') }}">
+                    </a>
+                </div>
+                <ul class="nav-links">
+                    <li class="nav-item"><a href="{{ path('app_home') }}"><i class="material-icons">home</i></a></li>
+                    <li class="nav-item"><a href="{{ path('app_login') }}"><i class="material-icons">login</i></a></li>
+                    <li class="nav-item"><a href="{{ path('app_register') }}"><i class="material-icons">person_add</i></a></li>
+                </ul>
+            </nav>
+{% endif %}
+    </header>
+    {% block body %}{% endblock %}
+</body>
+</html>
